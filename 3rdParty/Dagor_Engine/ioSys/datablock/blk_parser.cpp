@@ -1291,7 +1291,7 @@ bool DataBlockParser::parse(DataBlock &blk, bool isTop) {
 
       int pos = curp - text;
 
-      insert_items(buffer, pos, len + 2);
+      buffer.insert(buffer.begin() + pos, len + 2, '\0');
 
       if (h->df_read(&buffer[pos], len) != len) {
         SYNTAX_ERROR("error loading include file");
@@ -1318,7 +1318,7 @@ bool DataBlockParser::parse(DataBlock &blk, bool isTop) {
         DynamicMemGeneralSaveCB cwr(len * 2, 4 << 10);
         inc_blk.saveToTextStream(cwr);
         len = cwr.size();
-        insert_items(buffer, pos, len + 2);
+        buffer.insert(buffer.begin() + pos, len + 2, '\0');
         memcpy(&buffer[pos], cwr.data(), len);
       }
 
