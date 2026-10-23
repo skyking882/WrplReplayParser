@@ -22,6 +22,13 @@ void PyBattleMessages::include(py::module_ &m) {
       .def_readonly("VictimPid", &mpi::KillMessage::VictimPid)
       .def_readonly("unitType", &mpi::KillMessage::unitType)
       .def_readonly("is_burav_kill", &mpi::KillMessage::maybe_is_burav_kill)
+      .def_property_readonly("death_type", [](const mpi::KillMessage &k) { return (int) k.DeathType; })
+      .def_property_readonly("weapon_type", [](const mpi::KillMessage &k) { return (int) k.some_enum; })
+      .def_property_readonly("weapon_flags", [](const mpi::KillMessage &k) { return (int) k.some_weap_flags; })
+      .def_readonly("extra_str_1", &mpi::KillMessage::weird_str_1)
+      .def_readonly("extra_str_2", &mpi::KillMessage::weird_str_2)
+      .def_readonly("extra_val_3", &mpi::KillMessage::weird_val_3)
+      .def_readonly("extra_str_4", &mpi::KillMessage::weird_str_4)
       .def_readonly("offender_vehicle", &mpi::KillMessage::offender_vehicle);
 
   py::class_<mpi::SevereDamageMessage, mpi::IBattleMessage, std::unique_ptr<mpi::SevereDamageMessage, py::nodelete>>(
