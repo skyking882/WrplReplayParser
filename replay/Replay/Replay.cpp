@@ -269,10 +269,12 @@ void ReplayWriter<streamWrite>::write(const void *data, size_t size, uint32_t ti
 }*/
 template<bool streamWrite>
 void ReplayWriter<streamWrite>::write(const ReplayPacket &pkt) {
-  struct __attribute__((packed)) {
+#pragma pack(push, 1)  // __attribute__((packed)) is GCC / clang only
+  struct {
     uint16_t packet_type;
     uint32_t time_ms;
   } temp{};
+#pragma pack(pop)
   static_assert(sizeof(temp) == 6);
   auto &cb = getWriter();
   bool write_timestamp;
