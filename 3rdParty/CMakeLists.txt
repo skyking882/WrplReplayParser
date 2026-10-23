@@ -32,6 +32,13 @@ if (EMSCRIPTEN)
     add_library(cpptrace_stub INTERFACE)
     add_library(cpptrace::cpptrace ALIAS cpptrace_stub)
 else ()
+    # cpptrace symbol back end without libdwarf (LGPL-2.1, otherwise fetched and linked statically): dladdr on Unix,
+    # dbghelp on Windows. Only crash stack traces use it; replay parsing does not.
+    if (UNIX)
+        set(CPPTRACE_GET_SYMBOLS_WITH_LIBDL ON CACHE BOOL "" FORCE)
+    elseif (WIN32)
+        set(CPPTRACE_GET_SYMBOLS_WITH_DBGHELP ON CACHE BOOL "" FORCE)
+    endif ()
     add_subdirectory(cpptrace-1.0.4)
     add_subdirectory(signal_tracer)
 endif ()
