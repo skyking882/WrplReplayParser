@@ -377,7 +377,7 @@ namespace unit {
     }
     std::vector<uint16_t> weapons_count{};
     weapons_count.resize(0xFF, 0);
-    if (this->unit_wpcost->getBool("hasWeaponSlots", false)) {
+    if (this->unit_wpcost->getBool("hasWeaponSlots", blk.getBlockByName("WeaponSlots") != nullptr)) {
       // hasWeaponSlots:b=true denotes that this unit has custom
       // weapon creation which changes how weapons work
       int WeaponSlotNid = blk.getNameId("WeaponSlot"), WeaponPresetNid = blk.getNameId("WeaponPreset");
