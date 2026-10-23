@@ -89,6 +89,10 @@ namespace netutils
   #if !(_TARGET_APPLE || _TARGET_C3 || defined(__e2k__)) || (_TARGET_PC_MACOSX && !_TARGET_SIMD_NEON)
 #pragma float_control(push)
 #pragma float_control(precise, on)
+#if defined(__clang__) && defined(__aarch64__)
+// float_control(precise) turns FP contraction on; x86-64 (no FMA) never fuses, so keep arm64 bit-identical
+#pragma clang fp contract(off)
+#endif
 #endif
 #endif
 

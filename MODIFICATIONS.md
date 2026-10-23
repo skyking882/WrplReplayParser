@@ -31,8 +31,9 @@ the same order, one commit per script; the commit message is the script's docstr
 | 12 | macOS build: compile enet `unix.c` on Apple; drop `-static-libgcc` / `-static-libstdc++` | `3rdParty/enet/CMakeLists.txt`, `python/main/CMakeLists.txt` | Apple clang rejects the static flags and enet was missing its Unix sources. Build only |
 | 13 | Delete `3rdParty/regExp` | `3rdParty/regExp/` | Digital Mars code marked "All Rights Reserved" with an empty `NO_LICENSE` file, so it cannot be redistributed. It was not built (`# add_subdirectory(regExp)` in `3rdParty/CMakeLists.txt`) and nothing includes it. `LICENSE` still lists it; that file is left as upstream wrote it |
 | 14 | This file | `MODIFICATIONS.md` | |
+| 15 | arm64 build: define `_TARGET_SIMD_NEON` instead of `_TARGET_SIMD_SSE` on arm64 / aarch64, compile with `-ffp-contract=off`, and turn FP contraction off after `float_control(precise, on)` in `netUtils.cpp` on clang/aarch64 | `cmake/functions.cmake`, `3rdParty/Dagor_Engine/netutils/netUtils.cpp` | Native Apple Silicon build through Dagor's NEON vecmath. Without FMA contraction the arm64 exports are bit-identical to the x86_64 ones (checked on four 2026-10 replays); with it, positions differed by 1-2 float ULP. x86_64 and MSVC builds are unchanged |
 
 The probes (6, 7, 9, 10) are off unless the caller enables them. Changes 4 and 5 are bug fixes that can change parse
 results; all other changes either add read-only accessors or touch the build only.
 
-Further platform fixes (MSVC, arm64) go into separate commits on this branch and must not change parsing logic.
+Further platform fixes (e.g. MSVC) go into separate commits on this branch and must not change parsing logic.
