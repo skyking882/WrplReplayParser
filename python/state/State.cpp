@@ -1,4 +1,9 @@
 #include <pybind11/stl.h>
+#include <tuple>
+void enable_fm_probe();
+std::vector<std::tuple<uint32_t, uint32_t, uint32_t, std::string, std::string>> get_fm_probe();
+std::vector<std::tuple<uint32_t, uint32_t, uint32_t, float, float, float>> get_fm_velocity();
+#include <pybind11/stl.h>
 #include <map>
 #include <vector>
 #include <string>
@@ -98,6 +103,9 @@ void PyReplayState::include(py::module_ &m) {
   m.def("enableWeaponFieldProbe", &enable_weapon_field_probe);
   m.def("getWeaponFieldProbe", &get_weapon_field_probe);
   m.def("getWeaponFieldProbeHex", &get_weapon_field_probe_hex);
+  m.def("enableFmProbe", &enable_fm_probe);
+  m.def("getFmProbe", &get_fm_probe);
+  m.def("getFmVelocity", &get_fm_velocity);
   m.def("g_log_flush", []() {
     g_log_handler->wait_until_empty();
     g_log_handler->flush_all();
