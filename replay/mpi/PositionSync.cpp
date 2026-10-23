@@ -1,3 +1,11 @@
+#include <map>
+#include <vector>
+#include <string>
+using WeaponProbeRow = std::map<std::string, double>;
+static bool weapon_field_probe_enabled = false;
+static std::vector<WeaponProbeRow> weapon_field_probe_rows;
+void enable_weapon_field_probe() { weapon_field_probe_rows.clear(); weapon_field_probe_enabled = true; }
+std::vector<WeaponProbeRow> get_weapon_field_probe() { return weapon_field_probe_rows; }
 #include "state/ParserState.h"
 #include "mpi/PositionSync.h"
 #include "Unit.h"
@@ -746,12 +754,19 @@ Rocket *getTorpedo(ParserState &state, ecs::EntityId eid) {
 typedef Rocket *(*get_weapon_cb)(ParserState &state, ecs::EntityId eid);
 
 bool ParseWeapon(ParserState &state, const BitStream &bs, get_weapon_cb cb) {
+  WeaponProbeRow probe;
+  auto save = [&](const std::string &key, double value) {
+    if (weapon_field_probe_enabled) probe[key] = value;
+  };
+  save("time_ms", state.curr_time_ms);
   bool bool1, bool2;
   RET_FAIL(bs.Read(bool1));
   RET_FAIL(bs.Read(bool2));
   ecs::EntityId eid;
   RET_FAIL(bs.Read(eid));
   Rocket *entity = cb(state, eid);
+  save("eid", eid.get_handle());
+  save("bool1", bool1); save("bool2", bool2);
   // RET_FAIL(entity); // this can fucking happen apparently
   Point3 WeaponPos{};
   bool is_not_compressed;
@@ -786,6 +801,8 @@ bool ParseWeapon(ParserState &state, const BitStream &bs, get_weapon_cb cb) {
     v3 = v3 * 15000;
     WeaponPos = {v1, v2, v3};
   }
+  save("position_uncompressed", is_not_compressed);
+  save("x", WeaponPos.x); save("y", WeaponPos.y); save("z", WeaponPos.z);
   SpaceTimeEuler *back = nullptr;
   if (entity) {
     back = entity->positions.reserveOne();
@@ -795,29 +812,44 @@ bool ParseWeapon(ParserState &state, const BitStream &bs, get_weapon_cb cb) {
   if (!bool2) {
     int b5;
     bs.ReadZigZag(b5);
+    save("b5", b5);
     if (back) {
       RET_FAIL(bs.Read(back->euler));
+      save("euler_x", back->euler.x); save("euler_y", back->euler.y); save("euler_z", back->euler.z);
     } else {
       Point3 b6;
       RET_FAIL(bs.Read(b6));
+      save("euler_x", b6.x); save("euler_y", b6.y); save("euler_z", b6.z);
     }
     Point3 b7;
     Point3 b8;
     uint16_t temp_t;
     RET_FAIL(bs.Read(temp_t));
     b7.x = netutils::UNPACK(temp_t, 4000.0f);
+    save("b7_x_raw_u16", temp_t);
+    save("b7_x_upstream", b7.x);
     RET_FAIL(bs.Read(temp_t));
     b7.y = netutils::UNPACK(temp_t, 4000.0f);
+    save("b7_y_raw_u16", temp_t);
+    save("b7_y_upstream", b7.y);
     RET_FAIL(bs.Read(temp_t));
     b7.z = netutils::UNPACK(temp_t, 4000.0f);
+    save("b7_z_raw_u16", temp_t);
+    save("b7_z_upstream", b7.z);
 
 
     RET_FAIL(bs.Read(temp_t));
     b8.x = netutils::UNPACK(temp_t, 30.0f);
+    save("b8_x_raw_u16", temp_t);
+    save("b8_x_upstream", b8.x);
     RET_FAIL(bs.Read(temp_t));
     b8.y = netutils::UNPACK(temp_t, 30.0f);
+    save("b8_y_raw_u16", temp_t);
+    save("b8_y_upstream", b8.y);
     RET_FAIL(bs.Read(temp_t));
     b8.z = netutils::UNPACK(temp_t, 30.0f);
+    save("b8_z_raw_u16", temp_t);
+    save("b8_z_upstream", b8.z);
 
     bool some_b;
     uint16_t some_val = 0;
@@ -845,6 +877,8 @@ bool ParseWeapon(ParserState &state, const BitStream &bs, get_weapon_cb cb) {
       RET_FAIL(bs.ReadCompressed(temp));
       sf4 = (float) (temp - 1) / 48.f;
     }
+    save("sf_flags", flags);
+    save("sf1", sf1); save("sf2", sf2); save("sf3", sf3); save("sf4", sf4);
     if (!bool1) {
       float vv;
       RET_FAIL(bs.Read(vv));
@@ -852,6 +886,7 @@ bool ParseWeapon(ParserState &state, const BitStream &bs, get_weapon_cb cb) {
       RET_FAIL(bs.Read(vv2));
       uint16_t sz;
       RET_FAIL(bs.Read(sz));
+      save("vv", vv); save("vv2", vv2); save("skipped_bits", sz);
       bs.IgnoreBits(sz); // most likely seeker information
     } else if (resyncSaclosGuidanceParams) {
       bool do_stuff;
@@ -882,6 +917,7 @@ bool ParseWeapon(ParserState &state, const BitStream &bs, get_weapon_cb cb) {
       }
     }
   }
+  if (weapon_field_probe_enabled) weapon_field_probe_rows.push_back(std::move(probe));
   return true;
 }
 

@@ -1,3 +1,9 @@
+#include <pybind11/stl.h>
+#include <map>
+#include <vector>
+#include <string>
+void enable_weapon_field_probe();
+std::vector<std::map<std::string, double>> get_weapon_field_probe();
 #include <pybind11/functional.h>
 #include "modules/State.h"
 #include "modules/bind_readonly_vector.h"
@@ -88,6 +94,8 @@ void PyReplayState::include(py::module_ &m) {
     DataBlock::setIncludeResolver(&local_package_include_resolver);
   }, py::arg("path"), "Mount a local resource package; resolve CDK gameBase includes.");
 
+  m.def("enableWeaponFieldProbe", &enable_weapon_field_probe);
+  m.def("getWeaponFieldProbe", &get_weapon_field_probe);
   m.def("g_log_flush", []() {
     g_log_handler->wait_until_empty();
     g_log_handler->flush_all();
