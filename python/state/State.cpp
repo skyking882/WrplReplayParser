@@ -21,6 +21,26 @@ void initialize_wrapper(const std::string &VromfsPath, const std::string &grp_pa
   t.join();
 }
 
+
+#include "FileSystem.h"
+#include "ioSys/dag_dataBlock.h"
+#include <cctype>
+
+namespace {
+struct LocalPackageIncludeResolver : DataBlock::IIncludeFileResolver {
+  bool resolveIncludeFile(std::string &name) override {
+    constexpr std::string_view prefix = "#/develop/gameBase/";
+    if (!name.starts_with(prefix))
+      return false;
+    name.erase(0, prefix.size());
+    for (char &c : name)
+      c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return true;
+  }
+};
+LocalPackageIncludeResolver local_package_include_resolver;
+}
+
 void PyReplayState::include(py::module_ &m) {
   DO_INCLUDE()
   py_replay_state.include(m);
@@ -60,6 +80,14 @@ void PyReplayState::include(py::module_ &m) {
   m.def("initialize", &initialize_wrapper, py::arg("VromfsPath"), py::arg("grp_path") = "",
         py::arg("logfile_path") = "", py::arg("fonts") = false, py::arg("lang") = true, py::arg("mis") = true,
         "Initialize the ReplayParser with the given VromfsPath and logfile path.");
+
+  m.def("mountLocalPackage", [](const std::string &path) {
+    if (!fs::is_directory(path))
+      throw std::runtime_error("Local package directory does not exist: " + path);
+    file_mgr.add_mount(path);
+    DataBlock::setIncludeResolver(&local_package_include_resolver);
+  }, py::arg("path"), "Mount a local resource package; resolve CDK gameBase includes.");
+
   m.def("g_log_flush", []() {
     g_log_handler->wait_until_empty();
     g_log_handler->flush_all();
