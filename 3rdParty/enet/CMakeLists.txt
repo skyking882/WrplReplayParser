@@ -14,7 +14,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
             win32.c
     )
 
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE)
     set(sources
             ${sources}
             unix.c

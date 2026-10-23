@@ -21,8 +21,6 @@ attach_signal_tracer(PyReplayParser)
 if (LDAG_DBGLEVEL_TO_SET EQUAL 0)
     target_compile_options(PyReplayParser PRIVATE -fPIC)
     target_link_options(PyReplayParser PRIVATE
-            -static-libgcc
-            -static-libstdc++
             # -static
     )
 endif ()
