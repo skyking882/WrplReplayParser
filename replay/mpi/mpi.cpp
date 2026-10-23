@@ -180,6 +180,14 @@ namespace packet_ids {
   }
 } // namespace packet_ids
 
+#include <string>
+#include <tuple>
+#include <vector>
+using UnitMpiRow = std::tuple<uint32_t, uint8_t, uint16_t, uint32_t, uint16_t, uint32_t, std::string>;
+static bool unit_mpi_probe_enabled = false;
+static std::vector<UnitMpiRow> unit_mpi_probe_rows;
+void enable_unit_mpi_probe() { unit_mpi_probe_rows.clear(); unit_mpi_probe_enabled = true; }
+std::vector<UnitMpiRow> get_unit_mpi_probe() { return unit_mpi_probe_rows; }
 namespace mpi {
 #define MAX_CALL_DEPTH (16)
   static IMessageListener *message_listeners = nullptr;
@@ -200,8 +208,13 @@ namespace mpi {
       // LOG("MPI Dispatch: oid: {:#x}; extUid: {:#x}; mid: {:#x};", oid, extUid, mid);
       // mpi_data[oid][mid] += 1; used for packet
       IObject *o = dispatch_object(oid, extUid, state);
+      uint8_t probe_type = (uint8_t) (oid >> 0xb);
+      bool probe_unit = probe_type == 0 || probe_type == 1 || probe_type == 2 || probe_type == 12 ||
+                        probe_type == 13 || probe_type == 16 || probe_type == 17 || probe_type == 18 || probe_type == 25;
+      Message *probe_m = nullptr;
       if (o) {
         Message *m = (mid != INVALID_MESSAGE_ID) ? o->dispatchMpiMessage(mid) : nullptr;
+        probe_m = m;
         if (m) {
           m->payload.~BitStream();
           G_ASSERT(!(bs.GetReadOffset() & 7)); // bit offset
@@ -215,6 +228,19 @@ namespace mpi {
         }
       } else {
         // LOG("object doesen't exist");
+      }
+      if (unit_mpi_probe_enabled && probe_unit && !probe_m && unit_mpi_probe_rows.size() < 3000000) {
+        uint32_t at = BITS_TO_BYTES(bs.GetReadOffset());
+        uint32_t size = bs.GetNumberOfBytesUsed() > at ? bs.GetNumberOfBytesUsed() - at : 0;
+        std::string hex;
+        constexpr char digits[] = "0123456789abcdef";
+        for (uint32_t q = 0; q < size && q < 24; ++q) {
+          uint8_t byte = bs.GetData()[at + q];
+          hex += digits[byte >> 4];
+          hex += digits[byte & 15];
+        }
+        unit_mpi_probe_rows.emplace_back(state->curr_time_ms, probe_type, (uint16_t) (oid & 0x7ff), extUid, mid, size,
+                                         hex);
       }
     }
     return nullptr;

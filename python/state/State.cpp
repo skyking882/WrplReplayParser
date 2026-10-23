@@ -1,5 +1,9 @@
 #include <pybind11/stl.h>
 #include <tuple>
+void enable_unit_mpi_probe();
+std::vector<std::tuple<uint32_t, uint8_t, uint16_t, uint32_t, uint16_t, uint32_t, std::string>> get_unit_mpi_probe();
+#include <pybind11/stl.h>
+#include <tuple>
 void enable_fm_probe();
 std::vector<std::tuple<uint32_t, uint32_t, uint32_t, std::string, std::string>> get_fm_probe();
 std::vector<std::tuple<uint32_t, uint32_t, uint32_t, float, float, float>> get_fm_velocity();
@@ -106,6 +110,8 @@ void PyReplayState::include(py::module_ &m) {
   m.def("enableFmProbe", &enable_fm_probe);
   m.def("getFmProbe", &get_fm_probe);
   m.def("getFmVelocity", &get_fm_velocity);
+  m.def("enableUnitMpiProbe", &enable_unit_mpi_probe);
+  m.def("getUnitMpiProbe", &get_unit_mpi_probe);
   m.def("g_log_flush", []() {
     g_log_handler->wait_until_empty();
     g_log_handler->flush_all();
