@@ -193,6 +193,44 @@ void PyUnit::include(py::module_ &m) {
   py::class_<unit::UnitRef>(unit, "UnitRef").def_readonly("unit", &unit::UnitRef::unit);
 
   py::class_<Rocket, std::unique_ptr<Rocket, py::nodelete>>(unit, "Rocket")
+    .def_property_readonly("creation_raw_fields", [](const Rocket &r) {
+      py::dict d;
+      d["uleb_1"] = r.uleb_1;
+      d["u1_1"] = r.u1_1;
+      d["u4_1"] = r.u4_1;
+      d["weapon_ref"] = r.weapon_ref;
+      d["u1_2"] = r.u1_2;
+      d["shell_type"] = r.shell_type;
+      d["creation_time"] = r.creation_time;
+      d["u4_4"] = r.u4_4;
+      d["u1_4"] = r.u1_4;
+      d["u4_5"] = r.u4_5;
+      d["u1_5"] = r.u1_5;
+      d["u4_6"] = r.u4_6;
+      d["u1_6"] = r.u1_6;
+      d["starting_pos"] = py::make_tuple(r.starting_pos.x, r.starting_pos.y, r.starting_pos.z);
+      d["u12_2"] = py::make_tuple(r.u12_2.x, r.u12_2.y, r.u12_2.z);
+      d["u12_3"] = py::make_tuple(r.u12_3.x, r.u12_3.y, r.u12_3.z);
+      d["u12_4"] = py::make_tuple(r.u12_4.x, r.u12_4.y, r.u12_4.z);
+      d["u12_5"] = py::make_tuple(r.u12_5.x, r.u12_5.y, r.u12_5.z);
+      d["u16_1"] = py::make_tuple(r.u16_1.x, r.u16_1.y, r.u16_1.z, r.u16_1.w);
+      d["u8_1"] = py::make_tuple(r.u8_1.x, r.u8_1.y);
+      auto raw = [](const BitStream &bs) {
+        py::dict value;
+        value["bit_count"] = bs.GetWriteOffset();
+        std::string hex;
+        constexpr char digits[] = "0123456789abcdef";
+        for (uint32_t i = 0; i < (bs.GetWriteOffset() + 7) / 8; ++i) {
+          auto byte = bs.GetData()[i]; hex += digits[byte >> 4]; hex += digits[byte & 15];
+        }
+        value["hex"] = hex;
+        return value;
+      };
+      d["some_weap_type_info"] = raw(r.some_weap_type_info);
+      d["bomb_info"] = raw(r.bomb_info);
+      d["maybe_sensor_info"] = raw(r.maybe_sensor_info);
+      return d;
+    })
     .def_readonly("positions", &Rocket::positions)
     .def_readonly("created_at_ms", &Rocket::created_at_ms)
     .def_readonly("destroyed_at_ms", &Rocket::destroyed_at_ms)

@@ -4,7 +4,9 @@
 using WeaponProbeRow = std::map<std::string, double>;
 static bool weapon_field_probe_enabled = false;
 static std::vector<WeaponProbeRow> weapon_field_probe_rows;
-void enable_weapon_field_probe() { weapon_field_probe_rows.clear(); weapon_field_probe_enabled = true; }
+static std::vector<std::string> weapon_field_probe_hex;
+std::vector<std::string> get_weapon_field_probe_hex() { return weapon_field_probe_hex; }
+void enable_weapon_field_probe() { weapon_field_probe_rows.clear(); weapon_field_probe_hex.clear(); weapon_field_probe_enabled = true; }
 std::vector<WeaponProbeRow> get_weapon_field_probe() { return weapon_field_probe_rows; }
 #include "state/ParserState.h"
 #include "mpi/PositionSync.h"
@@ -754,6 +756,7 @@ Rocket *getTorpedo(ParserState &state, ecs::EntityId eid) {
 typedef Rocket *(*get_weapon_cb)(ParserState &state, ecs::EntityId eid);
 
 bool ParseWeapon(ParserState &state, const BitStream &bs, get_weapon_cb cb) {
+  const auto probe_start_bit = bs.GetReadOffset();
   WeaponProbeRow probe;
   auto save = [&](const std::string &key, double value) {
     if (weapon_field_probe_enabled) probe[key] = value;
@@ -886,6 +889,7 @@ bool ParseWeapon(ParserState &state, const BitStream &bs, get_weapon_cb cb) {
       RET_FAIL(bs.Read(vv2));
       uint16_t sz;
       RET_FAIL(bs.Read(sz));
+      save("seeker_start_bit", bs.GetReadOffset());
       save("vv", vv); save("vv2", vv2); save("skipped_bits", sz);
       bs.IgnoreBits(sz); // most likely seeker information
     } else if (resyncSaclosGuidanceParams) {
@@ -917,7 +921,18 @@ bool ParseWeapon(ParserState &state, const BitStream &bs, get_weapon_cb cb) {
       }
     }
   }
-  if (weapon_field_probe_enabled) weapon_field_probe_rows.push_back(std::move(probe));
+  if (weapon_field_probe_enabled) {
+    const auto end = bs.GetReadOffset();
+    save("start_bit", probe_start_bit); save("end_bit", end);
+    std::string raw;
+    constexpr char digits[] = "0123456789abcdef";
+    for (auto i = probe_start_bit / 8; i < (end + 7) / 8; ++i) {
+      auto byte = bs.GetData()[i];
+      raw += digits[byte >> 4]; raw += digits[byte & 15];
+    }
+    weapon_field_probe_rows.push_back(std::move(probe));
+    weapon_field_probe_hex.push_back(std::move(raw));
+  }
   return true;
 }
 

@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 void enable_weapon_field_probe();
+std::vector<std::string> get_weapon_field_probe_hex();
 std::vector<std::map<std::string, double>> get_weapon_field_probe();
 #include <pybind11/functional.h>
 #include "modules/State.h"
@@ -96,6 +97,7 @@ void PyReplayState::include(py::module_ &m) {
 
   m.def("enableWeaponFieldProbe", &enable_weapon_field_probe);
   m.def("getWeaponFieldProbe", &get_weapon_field_probe);
+  m.def("getWeaponFieldProbeHex", &get_weapon_field_probe_hex);
   m.def("g_log_flush", []() {
     g_log_handler->wait_until_empty();
     g_log_handler->flush_all();
