@@ -154,6 +154,11 @@ void PyECSQueryES::include(py::module_ &m) {
   py_entity_manager.include(m);
   ecs::after_comps_callbacks.push_back(on_callback);
   auto ecs = m.def_submodule("ecs");
+  ecs.def("clearPythonCallbacks", []() {
+    for (auto &system : registered_systems) {
+      system->cb = py::function();
+    }
+  }, "Release Python callback references before interpreter shutdown.");
   py::class_<ecs::Event>(ecs, "Event")
       .def_property_readonly("type", &ecs::Event::getType)
       .def_property_readonly("name", &ecs::Event::getName)
