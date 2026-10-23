@@ -108,6 +108,8 @@ void PyECSTypes::include(py::module_ &m) {
   REGISTER_TYPE(ecs::Object);
   REGISTER_TYPE(ecs::EntityId);
   REGISTER_TYPE(ecs::string);
+  REGISTER_TYPE(bool);
+  REGISTER_TYPE(float);
   REGISTER_TYPE(uint8_t);
   REGISTER_TYPE(uint16_t);
   REGISTER_TYPE(uint32_t);
